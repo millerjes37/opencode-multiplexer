@@ -1,0 +1,232 @@
+// OpenCode Multiplexer Layout
+// https://github.com/millerjes37/opencode-multiplexer
+//
+// This layout demonstrates the multi-client server architecture:
+// - ONE persistent server handles all AI processing
+// - Multiple TUI clients connect independently
+// - Efficient resource usage with shared server state
+//
+// Usage: zellij --layout opencode-multiplexer
+
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        children
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+
+    // Server Tab - Persistent OpenCode Server
+    tab name="🖥️ Server" focus=true {
+        pane borderless=true {
+            command "bash"
+            args "-c" "echo '🚀 Starting OpenCode Server on port 4096...' && echo '📊 Monitor server status: curl http://localhost:4096/status' && echo '' && opencode serve --port 4096 --hostname 127.0.0.1"
+        }
+    }
+
+    // Client Tabs - 30 TUI instances connecting to single server
+    tab name="Clients 1-4" {
+        pane split_direction="vertical" {
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 2 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 2 && opencode --server http://localhost:4096"
+                }
+            }
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 2 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 2 && opencode --server http://localhost:4096"
+                }
+            }
+        }
+    }
+
+    tab name="Clients 5-8" {
+        pane split_direction="vertical" {
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 3 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 3 && opencode --server http://localhost:4096"
+                }
+            }
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 3 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 3 && opencode --server http://localhost:4096"
+                }
+            }
+        }
+    }
+
+    tab name="Clients 9-12" {
+        pane split_direction="vertical" {
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 4 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 4 && opencode --server http://localhost:4096"
+                }
+            }
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 4 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 4 && opencode --server http://localhost:4096"
+                }
+            }
+        }
+    }
+
+    tab name="Clients 13-16" {
+        pane split_direction="vertical" {
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 5 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 5 && opencode --server http://localhost:4096"
+                }
+            }
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 5 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 5 && opencode --server http://localhost:4096"
+                }
+            }
+        }
+    }
+
+    tab name="Clients 17-20" {
+        pane split_direction="vertical" {
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 6 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 6 && opencode --server http://localhost:4096"
+                }
+            }
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 6 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 6 && opencode --server http://localhost:4096"
+                }
+            }
+        }
+    }
+
+    tab name="Clients 21-24" {
+        pane split_direction="vertical" {
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 7 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 7 && opencode --server http://localhost:4096"
+                }
+            }
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 7 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 7 && opencode --server http://localhost:4096"
+                }
+            }
+        }
+    }
+
+    tab name="Clients 25-28" {
+        pane split_direction="vertical" {
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 8 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 8 && opencode --server http://localhost:4096"
+                }
+            }
+            pane split_direction="horizontal" {
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 8 && opencode --server http://localhost:4096"
+                }
+                pane borderless=true {
+                    command "bash"
+                    args "-c" "sleep 8 && opencode --server http://localhost:4096"
+                }
+            }
+        }
+    }
+
+    tab name="Clients 29-30" {
+        pane split_direction="horizontal" {
+            pane borderless=true {
+                command "bash"
+                args "-c" "sleep 9 && opencode --server http://localhost:4096"
+            }
+            pane borderless=true {
+                command "bash"
+                args "-c" "sleep 9 && opencode --server http://localhost:4096"
+            }
+        }
+    }
+
+    // Monitoring Tab - Optional
+    tab name="📊 Monitor" {
+        pane split_direction="vertical" {
+            pane borderless=true {
+                command "bash"
+                args "-c" "echo '=== OpenCode Server Monitor ===' && echo '' && echo 'Commands:' && echo '  curl http://localhost:4096/status  - Server status' && echo '  curl http://localhost:4096/health  - Health check' && echo '' && while true; do clear; echo '=== Server Status (auto-refresh every 5s) ==='; echo ''; curl -s http://localhost:4096/status 2>/dev/null | python3 -m json.tool || echo 'Server not responding'; sleep 5; done"
+            }
+            pane borderless=true {
+                command "bash"
+                args "-c" "htop"
+            }
+        }
+    }
+}
