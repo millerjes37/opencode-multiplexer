@@ -1,0 +1,74 @@
+[Unit]
+Description=OpenCode Multi-Client Server
+Documentation=https://github.com/sst/opencode
+After=network.target
+
+[Service]
+Type=simple
+
+# User to run as (change to your username)
+User=opencode
+Group=opencode
+
+# Path to OpenCode binary (adjust if needed)
+ExecStart=/usr/local/bin/opencode serve --hostname 0.0.0.0 --port 4096
+
+# Working directory
+WorkingDirectory=/home/opencode
+
+# Restart behavior
+Restart=on-failure
+RestartSec=5s
+
+# Process limits
+LimitNOFILE=65536
+
+# Environment
+Environment="OPENCODE_DISABLE_AUTOUPDATE=true"
+Environment="NODE_ENV=production"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=opencode-server
+
+# Security hardening (optional but recommended)
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/opencode/.opencode
+
+[Install]
+WantedBy=multi-user.target
+
+# Installation Instructions:
+# 
+# 1. Create dedicated user (optional but recommended):
+#    sudo useradd -r -s /bin/false opencode
+#    sudo mkdir -p /home/opencode/.opencode
+#    sudo chown -R opencode:opencode /home/opencode
+# 
+# 2. Copy this file:
+#    sudo cp opencode-server.service /etc/systemd/system/
+# 
+# 3. Reload systemd:
+#    sudo systemctl daemon-reload
+# 
+# 4. Enable auto-start on boot:
+#    sudo systemctl enable opencode-server
+# 
+# 5. Start the service:
+#    sudo systemctl start opencode-server
+# 
+# 6. Check status:
+#    sudo systemctl status opencode-server
+# 
+# 7. View logs:
+#    sudo journalctl -u opencode-server -f
+# 
+# 8. Stop the service:
+#    sudo systemctl stop opencode-server
+# 
+# 9. Disable auto-start:
+#    sudo systemctl disable opencode-server

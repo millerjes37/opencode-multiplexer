@@ -35,6 +35,15 @@ export const TuiCommand = cmd({
         type: "string",
         describe: "path to start opencode in",
       })
+      .option("server", {
+        type: "string",
+        describe: "connect to existing OpenCode server (e.g., http://localhost:8080)",
+        conflicts: ["port", "hostname"],
+      })
+      .option("token", {
+        type: "string",
+        describe: "authentication token for server connection",
+      })
       .option("model", {
         type: "string",
         alias: ["m"],
@@ -61,12 +70,12 @@ export const TuiCommand = cmd({
       })
       .option("port", {
         type: "number",
-        describe: "port to listen on",
+        describe: "port for auto-spawned server (ignored if --server provided)",
         default: 0,
       })
       .option("hostname", {
         type: "string",
-        describe: "hostname to listen on",
+        describe: "hostname for auto-spawned server (ignored if --server provided)",
         default: "127.0.0.1",
       }),
   handler: async (args) => {
@@ -103,10 +112,50 @@ export const TuiCommand = cmd({
           return "needs_provider"
         }
 
-        const server = Server.listen({
-          port: args.port,
-          hostname: args.hostname,
-        })
+        // Check if --server flag is provided for external server mode
+        let serverUrl: string
+        let server: ReturnType<typeof Server.listen> | undefined
+
+        if (args.server) {
+          // External server mode - connect with retry logic
+          serverUrl = args.server
+          
+          // Test connection with exponential backoff retry
+          const MAX_RETRIES = 5
+          const RETRY_DELAYS = [1000, 2000, 5000, 10000, 30000]
+          let connected = false
+          
+          for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+              const response = await fetch(`${serverUrl}/path?directory=${encodeURIComponent(cwd)}`)
+              if (response.ok) {
+                connected = true
+                break
+              }
+              throw new Error(`Server returned ${response.status}`)
+            } catch (e: any) {
+              if (attempt === MAX_RETRIES - 1) {
+                UI.error(`Failed to connect to server at ${serverUrl}: ${e.message}`)
+                UI.error("Make sure the server is running with: opencode serve")
+                return "done"
+              }
+              const delay = RETRY_DELAYS[attempt]
+              UI.println(`Connection attempt ${attempt + 1}/${MAX_RETRIES} failed. Retrying in ${delay}ms...`)
+              await new Promise(resolve => setTimeout(resolve, delay))
+            }
+          }
+          
+          if (!connected) {
+            return "done"
+          }
+        } else {
+          // Legacy mode - auto-spawn embedded server
+          server = Server.listen({
+            port: args.port,
+            hostname: args.hostname,
+          })
+          serverUrl = server.url.toString()
+        }
 
         let cmd = [] as string[]
         const tui = Bun.embeddedFiles.find((item) => (item as File).name.includes("tui")) as File
@@ -147,10 +196,11 @@ export const TuiCommand = cmd({
           env: {
             ...process.env,
             CGO_ENABLED: "0",
-            OPENCODE_SERVER: server.url.toString(),
+            OPENCODE_SERVER: serverUrl,
+            ...(args.token ? { OPENCODE_TOKEN: args.token } : {}),
           },
           onExit: () => {
-            server.stop()
+            server?.stop()
           },
         })
 
@@ -177,7 +227,7 @@ export const TuiCommand = cmd({
         })()
 
         await proc.exited
-        server.stop()
+        server?.stop()
 
         return "done"
       })

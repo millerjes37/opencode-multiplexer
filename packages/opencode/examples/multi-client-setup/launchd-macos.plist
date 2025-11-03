@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Service identifier -->
+    <key>Label</key>
+    <string>ai.opencode.server</string>
+    
+    <!-- Program to run -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/opencode</string>
+        <string>serve</string>
+        <string>--hostname</string>
+        <string>127.0.0.1</string>
+        <string>--port</string>
+        <string>4096</string>
+    </array>
+    
+    <!-- Working directory -->
+    <key>WorkingDirectory</key>
+    <string>/Users/YOUR_USERNAME</string>
+    
+    <!-- Environment variables -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>OPENCODE_DISABLE_AUTOUPDATE</key>
+        <string>true</string>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    
+    <!-- Auto-start on boot -->
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <!-- Keep running -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    
+    <!-- Restart throttle (5 seconds) -->
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+    
+    <!-- Logging -->
+    <key>StandardOutPath</key>
+    <string>/Users/YOUR_USERNAME/Library/Logs/opencode-server.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/YOUR_USERNAME/Library/Logs/opencode-server-error.log</string>
+    
+    <!-- Process type -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <!-- Resource limits -->
+    <key>HardResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>4096</integer>
+    </dict>
+    
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>2048</integer>
+    </dict>
+</dict>
+</plist>
+
+<!-- 
+Installation Instructions for macOS:
+
+1. Update the plist file:
+   - Replace YOUR_USERNAME with your actual username
+   - Adjust paths to match your OpenCode installation
+   - Modify port/hostname if needed
+
+2. Copy to LaunchAgents directory:
+   cp launchd-macos.plist ~/Library/LaunchAgents/ai.opencode.server.plist
+
+3. Load the service:
+   launchctl load ~/Library/LaunchAgents/ai.opencode.server.plist
+
+4. Start the service:
+   launchctl start ai.opencode.server
+
+5. Check if running:
+   launchctl list | grep opencode
+
+6. View logs:
+   tail -f ~/Library/Logs/opencode-server.log
+
+7. Stop the service:
+   launchctl stop ai.opencode.server
+
+8. Unload the service:
+   launchctl unload ~/Library/LaunchAgents/ai.opencode.server.plist
+
+9. Remove the service:
+   rm ~/Library/LaunchAgents/ai.opencode.server.plist
+
+Troubleshooting:
+
+- Check service status:
+  launchctl list | grep ai.opencode.server
+
+- View error log:
+  cat ~/Library/Logs/opencode-server-error.log
+
+- Reload after changes:
+  launchctl unload ~/Library/LaunchAgents/ai.opencode.server.plist
+  launchctl load ~/Library/LaunchAgents/ai.opencode.server.plist
+
+- Debug mode (run manually):
+  /usr/local/bin/opencode serve --hostname 127.0.0.1 --port 4096
+-->

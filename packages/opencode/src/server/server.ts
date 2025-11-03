@@ -27,6 +27,7 @@ import { Permission } from "../permission"
 import { Instance } from "../project/instance"
 import { Agent } from "../agent/agent"
 import { Auth } from "../auth"
+import { ServerAuth } from "./auth"
 import { Command } from "../command"
 import { Global } from "../global"
 import { ProjectRoute } from "./project"
@@ -45,6 +46,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { TuiEvent } from "@/cli/cmd/tui/event"
 import { Snapshot } from "@/snapshot"
 import { SessionSummary } from "@/session/summary"
+import { Installation } from "../installation"
 
 const ERRORS = {
   400: {
@@ -86,7 +88,22 @@ export namespace Server {
     Connected: Bus.event("server.connected", z.object({})),
   }
 
+  // Global connection tracking
+  const activeConnections = new Map<string, {
+    projectID: string
+    directory: string
+    connectedAt: Date
+    clientID: string
+  }>()
+
   const app = new Hono()
+  // Global state for auth requirement
+  let authRequired = false
+  
+  export function setAuthRequired(required: boolean) {
+    authRequired = required
+  }
+
   export const App = lazy(() =>
     app
       .onError((err, c) => {
@@ -130,6 +147,32 @@ export namespace Server {
             return next()
           },
         })
+      })
+      .use(async (c, next) => {
+        // Skip auth for health check and status endpoints
+        if (c.req.path === '/health' || c.req.path === '/status') {
+          return next()
+        }
+        
+        // If auth is not required, skip validation
+        if (!authRequired) {
+          return next()
+        }
+        
+        // Check for Authorization header
+        const authHeader = c.req.header('Authorization')
+        if (!authHeader?.startsWith('Bearer ')) {
+          return c.json({ error: 'Missing authentication token' }, 401)
+        }
+        
+        const token = authHeader.substring(7)
+        const isValid = await ServerAuth.validateToken(token)
+        
+        if (!isValid) {
+          return c.json({ error: 'Invalid authentication token' }, 401)
+        }
+        
+        return next()
       })
       .use(cors())
       .get(
@@ -1619,6 +1662,69 @@ export namespace Server {
         },
       )
       .route("/tui/control", TuiRoute)
+      .get(
+        "/status",
+        describeRoute({
+          description: "Get server status and connection info",
+          operationId: "server.status",
+          responses: {
+            200: {
+              description: "Server status",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z.object({
+                      status: z.string(),
+                      version: z.string(),
+                      connectedClients: z.number(),
+                      connectionsByProject: z.record(z.string(), z.number()),
+                      uptime: z.number(),
+                    }).meta({ ref: "ServerStatus" })
+                  ),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const connectionsByProject: Record<string, number> = {}
+          for (const conn of activeConnections.values()) {
+            connectionsByProject[conn.projectID] = (connectionsByProject[conn.projectID] || 0) + 1
+          }
+          
+          return c.json({
+            status: 'ok',
+            version: Installation.VERSION,
+            connectedClients: activeConnections.size,
+            connectionsByProject,
+            uptime: process.uptime(),
+          })
+        },
+      )
+      .get(
+        "/health",
+        describeRoute({
+          description: "Health check endpoint",
+          operationId: "server.health",
+          responses: {
+            200: {
+              description: "Server health",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z.object({
+                      status: z.string(),
+                    }).meta({ ref: "ServerHealth" })
+                  ),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          return c.json({ status: 'ok' })
+        },
+      )
       .put(
         "/auth/:id",
         describeRoute({
@@ -1671,24 +1777,64 @@ export namespace Server {
           },
         }),
         async (c) => {
-          log.info("event connected")
+          // Generate unique client ID for this connection
+          const clientID = crypto.randomUUID()
+          const projectID = Instance.project.id
+          const directory = Instance.directory
+          const connectedAt = new Date()
+          
+          // Track connection
+          activeConnections.set(clientID, {
+            projectID,
+            directory,
+            connectedAt,
+            clientID,
+          })
+          
+          log.info("event connected", { 
+            clientID, 
+            projectID, 
+            directory,
+            totalConnections: activeConnections.size 
+          })
+          
           return streamSSE(c, async (stream) => {
             stream.writeSSE({
               data: JSON.stringify({
                 type: "server.connected",
-                properties: {},
+                properties: {
+                  clientID,
+                  projectID,
+                  directory,
+                },
               }),
             })
             const unsub = Bus.subscribeAll(async (event) => {
-              await stream.writeSSE({
-                data: JSON.stringify(event),
-              })
+              // Filter events to only those matching this project
+              // Events without projectID are broadcast to all (for backward compatibility)
+              if (!event.properties?.projectID || event.properties.projectID === projectID) {
+                await stream.writeSSE({
+                  data: JSON.stringify(event),
+                })
+              }
             })
             await new Promise<void>((resolve) => {
               stream.onAbort(() => {
                 unsub()
+                
+                // Remove from connection map
+                activeConnections.delete(clientID)
+                
+                const duration = Date.now() - connectedAt.getTime()
+                log.info("event disconnected", { 
+                  clientID, 
+                  projectID, 
+                  directory,
+                  duration: `${(duration / 1000).toFixed(2)}s`,
+                  totalConnections: activeConnections.size 
+                })
+                
                 resolve()
-                log.info("event disconnected")
               })
             })
           })

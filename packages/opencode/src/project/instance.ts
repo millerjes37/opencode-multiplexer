@@ -2,6 +2,7 @@ import { Log } from "@/util/log"
 import { Context } from "../util/context"
 import { Project } from "./project"
 import { State } from "./state"
+import { Bus } from "../bus"
 
 interface Context {
   directory: string
@@ -48,6 +49,7 @@ export const Instance = {
   },
   async dispose() {
     Log.Default.info("disposing instance", { directory: Instance.directory })
+    Bus.cleanup(Instance.project.id)
     await State.dispose(Instance.directory)
   },
   async disposeAll() {

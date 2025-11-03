@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  opencode-server:
+    # Use official OpenCode image (adjust as needed)
+    image: node:20-alpine
+    container_name: opencode-server
+    restart: unless-stopped
+    
+    # Install and run OpenCode
+    command: >
+      sh -c "
+        npm install -g opencode-ai &&
+        opencode serve --hostname 0.0.0.0 --port 8080
+      "
+    
+    ports:
+      - "8080:8080"
+    
+    volumes:
+      # Persist OpenCode configuration and state
+      - opencode-data:/root/.opencode
+      
+      # Mount your projects (adjust paths as needed)
+      - ./projects:/projects
+    
+    environment:
+      # Optional: Set custom environment variables
+      - OPENCODE_DISABLE_AUTOUPDATE=true
+    
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+volumes:
+  opencode-data:
+    driver: local
+
+# Usage:
+# 
+# 1. Start the server:
+#    docker-compose up -d
+# 
+# 2. Check logs:
+#    docker-compose logs -f opencode-server
+# 
+# 3. Connect a client:
+#    opencode --server http://localhost:8080
+# 
+# 4. Stop the server:
+#    docker-compose down
+# 
+# 5. Remove all data:
+#    docker-compose down -v
