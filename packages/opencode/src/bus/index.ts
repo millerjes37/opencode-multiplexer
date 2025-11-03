@@ -65,7 +65,7 @@ export namespace Bus {
     const payload = {
       type: def.type,
       properties: {
-        ...properties,
+        ...(properties as object),
         projectID,
       },
     }
