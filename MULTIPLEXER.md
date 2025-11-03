@@ -9,6 +9,8 @@ Run 30+ OpenCode TUI instances efficiently with a single persistent server.
 
 ## Quick Start
 
+### Option 1: Using the Start Script (Recommended)
+
 ```bash
 # Clone and build
 git clone https://github.com/millerjes37/opencode-multiplexer.git
@@ -19,10 +21,23 @@ git checkout feature/multi-client-server
 bun install
 bun run build
 
-# Install Zellij layout
+# Start server with auto-configured PATH
+./scripts/start-server.sh
+
+# In another terminal: Install Zellij layout
 bash scripts/install-zellij-layout.sh
 
 # Launch 30-client multiplexer!
+zellij --layout opencode-multiplexer
+```
+
+### Option 2: Manual Start
+
+```bash
+# Start server manually
+opencode serve --port 4096
+
+# In another terminal: Launch clients
 zellij --layout opencode-multiplexer
 ```
 
@@ -36,6 +51,46 @@ alias ocmux='zellij --layout opencode-multiplexer'
 Then simply run:
 ```bash
 ocmux
+```
+
+## Server Management
+
+### Using start-server.sh
+
+The `start-server.sh` script automatically configures your PATH and starts the server:
+
+```bash
+# Basic usage (uses defaults)
+./scripts/start-server.sh
+
+# Custom port and hostname
+./scripts/start-server.sh --port 8080 --hostname 0.0.0.0
+
+# With authentication
+./scripts/start-server.sh --require-auth
+
+# With PID file for daemon management
+./scripts/start-server.sh --pidfile /var/run/opencode.pid
+
+# Using environment variables
+PORT=8080 HOSTNAME=0.0.0.0 ./scripts/start-server.sh
+```
+
+**Features:**
+- Auto-detects OpenCode in `~/.opencode/bin`, `~/.local/bin`, etc.
+- Port conflict detection and resolution
+- Health check verification
+- Graceful shutdown (Ctrl+C)
+- PID file support
+
+### Manual Server Start
+
+```bash
+# Ensure opencode is in PATH
+export PATH="$HOME/.opencode/bin:$PATH"
+
+# Start server
+opencode serve --port 4096 --hostname 127.0.0.1
 ```
 
 ## Layout Structure
